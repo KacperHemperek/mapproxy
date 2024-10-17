@@ -123,8 +123,8 @@ class TileManager(object):
             [tile_coord], dimensions=dimensions, with_metadata=with_metadata,
         )[0]
 
-    def load_tile_coords(self, tile_coords, dimensions=None, with_metadata=False):
-        tiles = TileCollection(tile_coords)
+    def load_tile_coords(self, tile_coords, dimensions=None, token=None, with_metadata=False):
+        tiles = TileCollection(tile_coords, token=token)
         rescale_till_zoom = 0
         if self.rescale_tiles:
             for t in tiles.tiles:
@@ -406,8 +406,12 @@ class TileCreator(object):
 
     def _create_single_tile(self, tile, dimensions=None):
         tile_bbox = self.grid.tile_bbox(tile.coord)
-        query = MapQuery(tile_bbox, self.grid.tile_size, self.grid.srs,
-                         self.tile_mgr.request_format, dimensions=self.dimensions)
+        if tile.token:
+            query = MapQuery(tile_bbox, self.grid.tile_size, self.grid.srs,
+                             self.tile_mgr.request_format, dimensions=self.dimensions, token=tile.token)
+        else: 
+            query = MapQuery(tile_bbox, self.grid.tile_size, self.grid.srs,
+                             self.tile_mgr.request_format, dimensions=self.dimensions)
         with self.tile_mgr.lock(tile):
             if not self.is_cached(tile, dimensions=dimensions):
                 source = None
@@ -575,12 +579,13 @@ class Tile(object):
     :type source: ImageSource
     """
 
-    def __init__(self, coord, source=None, cacheable=True):
+    def __init__(self, coord, source=None, token=None, cacheable=True):
         self.coord = coord
         self.source = source
         self.location = None
         self.stored = False
         self._cacheable = cacheable
+        self.token = token
         self.size = None
         self.timestamp = None
 
@@ -671,8 +676,8 @@ class CacheInfo(object):
 
 
 class TileCollection(object):
-    def __init__(self, tile_coords):
-        self.tiles = [Tile(coord) for coord in tile_coords]
+    def __init__(self, tile_coords, token=None):
+        self.tiles = [Tile(coord, token=token) for coord in tile_coords]
         self.tiles_dict = {}
         for tile in self.tiles:
             self.tiles_dict[tile.coord] = tile

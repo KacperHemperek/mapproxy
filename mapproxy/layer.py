@@ -28,6 +28,7 @@ from mapproxy.proj import ProjError
 
 import logging
 from functools import reduce
+
 log = logging.getLogger(__name__)
 
 
@@ -123,7 +124,7 @@ class MapQuery(object):
     """
 
     def __init__(self, bbox, size, srs, format='image/png', transparent=False,
-                 tiled_only=False, dimensions=None):
+                 tiled_only=False, dimensions=None, token=None):
         self.bbox = bbox
         self.size = size
         self.srs = srs
@@ -131,6 +132,7 @@ class MapQuery(object):
         self.transparent = transparent
         self.tiled_only = tiled_only
         self.dimensions = dimensions or {}
+        self.token = token
 
     def dimensions_for_params(self, params):
         """
@@ -426,7 +428,7 @@ class CacheMapLayer(MapLayer):
             size, offset, bbox = bbox_position_in_image(query.bbox, query.size, self.extent.bbox_for(query.srs))
             if size[0] == 0 or size[1] == 0:
                 raise BlankImage()
-            src_query = MapQuery(bbox, size, query.srs, query.format, dimensions=query.dimensions)
+            src_query = MapQuery(bbox, size, query.srs, query.format, dimensions=query.dimensions, token=query.token)
             resp = self._image(src_query)
             result = SubImageSource(resp, size=query.size, offset=offset, image_opts=self.image_opts,
                                     cacheable=resp.cacheable)
@@ -465,7 +467,7 @@ class CacheMapLayer(MapLayer):
 
         with self.tile_manager.session():
             tile_collection = self.tile_manager.load_tile_coords(
-                affected_tile_coords, with_metadata=query.tiled_only, dimensions=query.dimensions)
+                affected_tile_coords, with_metadata=query.tiled_only, dimensions=query.dimensions, token=query.token)
 
         if tile_collection.empty:
             raise BlankImage()
