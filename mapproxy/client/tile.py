@@ -15,15 +15,14 @@
 
 from mapproxy.client.http import retrieve_image
 
-
 class TileClient(object):
     def __init__(self, url_template, http_client=None, grid=None):
         self.url_template = url_template
         self.http_client = http_client
         self.grid = grid
 
-    def get_tile(self, tile_coord, format=None):
-        url = self.url_template.substitute(tile_coord, format, self.grid)
+    def get_tile(self, tile_coord, format=None, token=None):
+        url = self.url_template.substitute(tile_coord, format, self.grid, token)
         if self.http_client:
             return self.http_client.open_image(url)
         else:
@@ -60,13 +59,14 @@ class TileURLTemplate(object):
     def __init__(self, template, format='png'):
         self.template = template
         self.format = format
+        self.with_token = True if '%(token)' in template else False 
         self.with_quadkey = True if '%(quadkey)' in template else False
         self.with_tc_path = True if '%(tc_path)' in template else False
         self.with_tms_path = True if '%(tms_path)' in template else False
         self.with_arcgiscache_path = True if '%(arcgiscache_path)' in template else False
         self.with_bbox = True if '%(bbox)' in template else False
 
-    def substitute(self, tile_coord, format=None, grid=None):
+    def substitute(self, tile_coord, format=None, grid=None, token=None):
         x, y, z = tile_coord
         data = dict(x=x, y=y, z=z)
         data['format'] = format or self.format
@@ -80,6 +80,10 @@ class TileURLTemplate(object):
             data['arcgiscache_path'] = arcgiscache_path(tile_coord)
         if self.with_bbox:
             data['bbox'] = bbox(tile_coord, grid)
+        if self.with_token:
+            if not token:
+                raise Exception('No token provided')
+            data['token'] = token 
 
         return self.template % data
 
