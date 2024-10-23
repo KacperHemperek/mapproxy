@@ -18,6 +18,8 @@
   <Name>OGC:WMS</Name>
   <Title>{{service.title}}</Title>
   <Abstract>{{service.abstract}}</Abstract>
+  <MaxWidth>2048</MaxWidth>
+  <MaxHeight>2048</MaxHeight>
 {{if service.online_resource}}
   <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="{{service.online_resource}}"/>
 {{else}}
